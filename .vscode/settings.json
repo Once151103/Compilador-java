@@ -1,0 +1,8 @@
+{
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar",
+    "compilerTools-2.3.7.jar",
+    "flatlaf-2.2.jar",
+    "jflex-full-1.8.2.jar"
+  ]
+}
