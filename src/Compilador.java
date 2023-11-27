@@ -11,7 +11,7 @@ import compilerTools.Production;
 import compilerTools.TextColor;
 import compilerTools.Token;
 
-import java.awt.Color;
+//import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -66,7 +66,7 @@ public class Compilador extends javax.swing.JFrame {
         Functions.setLineNumberOnJTextComponent(jtpCode);
         timerKeyReleased = new Timer((int) (1000 * 0.3), (ActionEvent e) -> {
             timerKeyReleased.stop();
-            colorAnalysis();
+//            colorAnalysis();
         });
         Functions.insertAsteriskInName(this, jtpCode, () -> {
             timerKeyReleased.restart();
@@ -297,7 +297,7 @@ public class Compilador extends javax.swing.JFrame {
 
     private void btnAbrirActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnAbrirActionPerformed
         if (directorio.Open()) {
-            colorAnalysis();
+//            colorAnalysis();
             clearFields();
         }
     }// GEN-LAST:event_btnAbrirActionPerformed
@@ -368,39 +368,128 @@ public class Compilador extends javax.swing.JFrame {
     private void syntacticAnalysis() {
         Grammar gramatica = new Grammar(tokens, errors);
 
-        /* Mostrar gramáticas */
+        // Eliminación de errores
+        gramatica.delete(new String[]{"ERROR"}, 1);
+
+        // Definición de Variable
+        gramatica.group("VALOR", "Tipo_de_dato Identificador", true);
+        gramatica.group("DECLARACION_VARIABLE", "Tipo_de_dato Identificador ASIGNACION ", true,
+                1, "Error Sintáctico {}: Falta el valor en la asignación de la variable [#,%]");
+
+        // Variables
+        gramatica.group("VARIABLE", "(VALOR | Identificador)  ASIGNACION (Numero | Identificador (OP_Aritmetico (Numero | Identificador)+))", true);
+        gramatica.group("VARIABLE", "(VALOR | Identificador) ASIGNACION (Numero | Identificador (OP_Aritmetico))", true,
+                2, "Error Sintáctico {}: Falta el valor despues del operador Aritmetico [#,%]");
+        gramatica.group("VARIABLE", "(VALOR | Identificador) ASIGNACION (Numero | Identificador ((Numero | Identificador)+))", true,
+                3, "Error Sintáctico {}: Falta el Operador Aritmetico despues del valor [#,%]");
+        gramatica.group("VARIABLE", "(VALOR | Identificador) ASIGNACION ((OP_Aritmetico (Numero | Identificador)+))", true,
+                4, "Error Sintáctico {}: Falta el valor antes del Operador Aritmetico [#,%]");
+        gramatica.group("VARIABLE", "(VALOR | Identificador) ASIGNACION Identificador", true);
+        gramatica.group("VARIABLE", "Tipo_de_dato ASIGNACION Identificador", true,
+                4, "Error Sintáctico {}: Falta el identificador en la variable [#,%]");
+        gramatica.group("VARIABLE", "VALOR ASIGNACION", true,
+                2, "Error Sintáctico {}: Falta el identificador en la asignación [#,%]");
+
+        
+        // Creación de objeto
+        gramatica.group("CREACION_OBJETO", "Identificador Identificador ASIGNACION new Identificador PARENTESIS_ABIERTO (VARIABLE | VALOR)? PARENTESIS_CERRADO PUNTO_Y_COMA", true,
+            3, "Error Sintáctico {}: El Operador de Asignación no está en una declaración [#,%]");
+        // Eliminación de tipos de dato y operadores de asignación
+        gramatica.delete("ASIGNACION", 3,
+                "Error Sintáctico: {}: El Operador de Asignación no está en una declaración valida [#,%]");
+
+        // Agrupación de Identificadores y definición de parámetros
+        gramatica.group("PARAMETROS", "VALOR (COMA VALOR)+", true);
+
+        // Funciones
+        gramatica.group("LLAMADA_FUNCION_CON_PARAMETROS", "Identificador PARENTESIS_ABIERTO (VARIABLE | VALOR) (COMA (VARIABLE | VALOR))* PARENTESIS_CERRADO PUNTO_Y_COMA", true);
+        gramatica.group("LLAMADA_FUNCION_SIN_PARAMETROS", "Identificador PARENTESIS_ABIERTO PARENTESIS_CERRADO PUNTO_Y_COMA", true);
+
+        gramatica.group("FUNCION_CREACION_CON_RETORNO", "Modificador_de_Acceso VALOR Identificador PARENTESIS_ABIERTO (PARAMETROS)? PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true);
+        gramatica.group("FUNCION_CREACION_CON_RETORNO", "Modificador_de_Acceso VALOR Identificador (PARAMETROS)? PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true, 6,
+                "Error Sintáctico {}: Falta el paréntesis que abre en la Función [#,%]");
+        gramatica.group("FUNCION_CREACION_CON_RETORNO", "Modificador_de_Acceso VALOR Identificador PARENTESIS_ABIERTO (PARAMETROS)", true, 7,
+                "Error Sintáctico {}: Falta el paréntesis que cierra en la Función [#,%]");
+        gramatica.group("FUNCION_CREACION_CON_RETORNO", "Modificador_de_Acceso VALOR Identificador PARENTESIS_ABIERTO (PARAMETROS)? PARENTESIS_CERRADO", true, 8,
+                "Error Sintáctico {}: Falta Punto y coma en la Función [#,%]");
+
+        gramatica.group("FUNCION_CREACION_SIN_RETORNO", "Modificador_de_Acceso VALOR Identificador PARENTESIS_ABIERTO (PARAMETROS)? PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true);
+        gramatica.group("FUNCION_CREACION_SIN_RETORNO", "Modificador_de_Acceso VALOR Identificador (PARAMETROS)? PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true, 6,
+                "Error Sintáctico {}: Falta el paréntesis que abre en la Función [#,%]");
+        gramatica.group("FUNCION_CREACION_SIN_RETORNO", "Modificador_de_Acceso VALOR Identificador PARENTESIS_ABIERTO (PARAMETROS)", true, 7,
+                "Error Sintáctico {}: Falta el paréntesis que cierra en la Función [#,%]");
+        gramatica.group("FUNCION_CREACION_SIN_RETORNO", "Modificador_de_Acceso VALOR Identificador PARENTESIS_ABIERTO (PARAMETROS)? PARENTESIS_CERRADO", true, 8,
+                "Error Sintáctico {}: Falta Punto y coma en la Función [#,%]");
+
+        // Estructuras de control
+        gramatica.group("IF_ELSE", "if PARENTESIS_ABIERTO EXP_LOGICA PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA (else LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA)?", true);
+        gramatica.group("CICLO_FOR", "for PARENTESIS_ABIERTO (VARIABLE | ASIGNACION | VALOR)? PUNTO_Y_COMA EXP_LOGICA PUNTO_Y_COMA (VARIABLE | ASIGNACION | VALOR)? PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true);
+
+        // Retorno de funciones sin errores
+        gramatica.group("RETORNO_FUNCION_SIN_ERRORES", "return (VARIABLE | VALOR)? PUNTO_Y_COMA", true);
+
+        // Llamada a método con parámetros
+        gramatica.group("LLAMADA_METODO_CON_PARAMETROS", "Identificador PARENTESIS_ABIERTO (VARIABLE | VALOR) (COMA (VARIABLE | VALOR))* PARENTESIS_CERRADO PUNTO_Y_COMA", true);
+
+        // Definición de una clase
+        gramatica.group("CLASE", "Modificador_de_Acceso Palabra_ReservadaEspecial Identificador LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true);
+
+        // Método main
+        gramatica.group("METODO_MAIN", "Palabra_ReservadaEspecial Tipo_de_dato Identificador PARENTESIS_ABIERTO (Tipo_de_dato Identificador)? PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true);
+
+        // Llamada a función con parámetros
+        gramatica.group("LLAMADA_FUNCION_CON_PARAMETROS", "Identificador PARENTESIS_ABIERTO (Tipo_de_dato Identificador)? PARENTESIS_CERRADO PUNTO_Y_COMA", true);
+
+        // Llamada a función sin parámetros
+        gramatica.group("LLAMADA_FUNCION_SIN_PARAMETROS", "Identificador PARENTESIS_ABIERTO PARENTESIS_CERRADO PUNTO_Y_COMA", true);
+
+        // Estructura de control if-else
+        gramatica.group("IF_ELSE", "Palabra_ReservadaEspecial PARENTESIS_ABIERTO Identificador OP_Logico Identificador PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA ELSE LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true);
+
+        // Ciclo for
+        gramatica.group("CICLO_FOR", "Palabra_ReservadaEspecial PARENTESIS_ABIERTO Tipo_de_dato Identificador ASIGNACION Numero PUNTO_Y_COMA Identificador OP_Logico Numero PUNTO_Y_COMA Identificador ASIGNACION Identificador OP_Aritmetico Numero PARENTESIS_CERRADO LLAVE_ABIERTA (VARIABLE | FUNCION)* LLAVE_CERRADA", true);
+
+        // Llamada a método con parámetros
+        gramatica.group("LLAMADA_METODO_CON_PARAMETROS", "Identificador PARENTESIS_ABIERTO Tipo_de_dato Identificador COMA Tipo_de_dato Identificador COMA Tipo_de_dato Identificador PARENTESIS_CERRADO PUNTO_Y_COMA", true);
+
+        // Otras reglas...
+
+        // Mostrar gramáticas
         gramatica.show();
     }
+
+
+
 
     private void semanticAnalysis() {
     }
 
-    private void colorAnalysis() {
-        /* Limpiar el arreglo de colores */
-        textsColor.clear();
-        /* Extraer rangos de colores */
-        LexerColor lexerColor;
-        try {
-            File codigo = new File("color.encrypter");
-            FileOutputStream output = new FileOutputStream(codigo);
-            byte[] bytesText = jtpCode.getText().getBytes();
-            output.write(bytesText);
-            BufferedReader entrada = new BufferedReader(new InputStreamReader(new FileInputStream(codigo), "UTF8"));
-            lexerColor = new LexerColor(entrada);
-            while (true) {
-                TextColor textColor = lexerColor.yylex();
-                if (textColor == null) {
-                    break;
-                }
-                textsColor.add(textColor);
-            }
-        } catch (FileNotFoundException ex) {
-            System.out.println("El archivo no pudo ser encontrado... " + ex.getMessage());
-        } catch (IOException ex) {
-            System.out.println("Error al escribir en el archivo... " + ex.getMessage());
-        }
-        Functions.colorTextPane(textsColor, jtpCode, new Color(40, 40, 40));
-    }
+//    private void colorAnalysis() {
+//        /* Limpiar el arreglo de colores */
+//        textsColor.clear();
+//        /* Extraer rangos de colores */
+//        LexerColor lexerColor;
+//        try {
+//            File codigo = new File("color.encrypter");
+//            FileOutputStream output = new FileOutputStream(codigo);
+//            byte[] bytesText = jtpCode.getText().getBytes();
+//            output.write(bytesText);
+//            BufferedReader entrada = new BufferedReader(new InputStreamReader(new FileInputStream(codigo), "UTF8"));
+//            lexerColor = new LexerColor(entrada);
+//            while (true) {
+//                TextColor textColor = lexerColor.yylex();
+//                if (textColor == null) {
+//                    break;
+//                }
+//                textsColor.add(textColor);
+//            }
+//        } catch (FileNotFoundException ex) {
+//            System.out.println("El archivo no pudo ser encontrado... " + ex.getMessage());
+//        } catch (IOException ex) {
+//            System.out.println("Error al escribir en el archivo... " + ex.getMessage());
+//        }
+//        Functions.colorTextPane(textsColor, jtpCode, new Color(40, 40, 40));
+//    }
 
     int i = 0;
 

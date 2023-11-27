@@ -12,13 +12,9 @@ import compilerTools.Token;
         return new Token(lexeme, lexicalComp, line+1, column+1);
     }
 %}
-Suma = "+"
-Resta = "-"
-Multiplicacion = "*"
-Division = "/"
-Igual = "="
-Igualacion= "=="
 
+
+Igual = "="
 
 ParentesisAbierto = "("
 ParentesisCerrado = ")"
@@ -27,10 +23,20 @@ LlaveCerrada = "}"
 CorcheteAbierto = "["
 CorcheteCerrado = "]"
 PuntoyComa = ";"
+Coma = ","
 Comillas = "\""
 Punto = "."
-MenorQue = "<"
-MayorQue = ">"
+
+OP_Aritmetico = "+"
+| "-"
+| "*"
+| "/"
+
+OP_Logico= "<"
+| ">"
+| "&"
+| "|"
+| "=="
 
 /* Palabras reservadas */
 PalabraReservada = "if"
@@ -42,6 +48,7 @@ PalabraReservada = "if"
 | "return"
 | "break"
 | "for"
+| "null"
 
 ModificadorAcceso = 
   "public"
@@ -50,7 +57,6 @@ ModificadorAcceso =
 | "package"
 
 TipoDato = "void"
-| "null"
 | "boolean"
 | "byte"
 | "char"
@@ -59,6 +65,16 @@ TipoDato = "void"
 | "int"
 | "long"
 | "short"
+
+PalabraReservadaEspecial = "static"
+| "class"
+
+ModificadorMetodo = "static"  // 'static' como modificador de método
+| "public"
+| "private"
+| "protected"
+| "package"
+
 
 /* Variables básicas de comentarios y espacios */
 TerminadorDeLinea = \r|\n|\r\n
@@ -85,15 +101,9 @@ Numero = 0 | [1-9][0-9]*
 /* Comentarios o espacios en blanco */
 {Comentario}|{EspacioEnBlanco} { /*Ignorar*/ }
 
-/* Regla para manejar los operadores aritméticos */
-{Suma} { return token(yytext(), "SUMA", yyline, yycolumn); }
-{Resta} { return token(yytext(), "RESTA", yyline, yycolumn); }
-{Multiplicacion} { return token(yytext(), "MULTIPLICACION", yyline, yycolumn); }
-{Division} { return token(yytext(), "DIVISION", yyline, yycolumn); }
 
 /* Regla para otros símbolos especiales */
 {Igual} { return token(yytext(), "ASIGNACION", yyline, yycolumn); }
-{Igualacion} { return token(yytext(), "IGUALACION", yyline, yycolumn); }
 {ParentesisAbierto} { return token(yytext(), "PARENTESIS_ABIERTO", yyline, yycolumn); }
 {ParentesisCerrado} { return token(yytext(), "PARENTESIS_CERRADO", yyline, yycolumn); }
 {LlaveAbierta} { return token(yytext(), "LLAVE_ABIERTA", yyline, yycolumn); }
@@ -101,18 +111,20 @@ Numero = 0 | [1-9][0-9]*
 {CorcheteAbierto} { return token(yytext(), "CORCHETE_ABIERTO", yyline, yycolumn); }
 {CorcheteCerrado} { return token(yytext(), "CORCHETE_CERRADO", yyline, yycolumn); }
 {PuntoyComa} { return token(yytext(), "PUNTO_Y_COMA", yyline, yycolumn); }
+{Coma} { return token(yytext(), "COMA", yyline, yycolumn); }
 {Comillas} { return token(yytext(), "COMILLAS", yyline, yycolumn); }
 {Punto} { return token(yytext(), "PUNTO", yyline, yycolumn); }
-{MenorQue} { return token(yytext(), "MenorQue", yyline, yycolumn); }
-{MayorQue} { return token(yytext(), "MayorQue", yyline, yycolumn); }
 
 /* Palabras reservadas y otros tokens */
-{PalabraReservada} { return token(yytext(), "Palabra Reservada", yyline, yycolumn); }
+{PalabraReservada} { return token(yytext(), "Palabra_Reservada", yyline, yycolumn); }
 
-{ModificadorAcceso} { return token(yytext(), "Modificador de Acceso", yyline, yycolumn); }
+{ModificadorAcceso} { return token(yytext(), "Modificador_de_Acceso", yyline, yycolumn); }
 
-{TipoDato} { return token(yytext(), "Tipo de dato", yyline, yycolumn); }
+{TipoDato} { return token(yytext(), "Tipo_de_dato", yyline, yycolumn); }
 
+/* Regla para manejar los operadores */
+{OP_Aritmetico} {return token(yytext(), "OP_Aritmetico", yyline, yycolumn);}
+{OP_Logico} {return token(yytext(), "OP_Logico", yyline, yycolumn);}
 
 /* Identificador y número */
 {Identificador} { return token(yytext(), "Identificador", yyline, yycolumn); }
